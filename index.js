@@ -51,7 +51,7 @@ const requestHandlers = {
       if (!reports[r.query.report]) return Boom.badRequest('invalid report (100)')
 
       const missingParams = reports[r.query.report].params.filter(e => !r.query[e])
-      if ( typeof missingParams !== 'undefined' ) {
+      if ( missingParams.length ) {
         return Boom.badRequest(`missing required parameters: ${missingParams.join()}` + ' (101)')
       }
 

@@ -51,7 +51,7 @@ const requestHandlers = {
       if (!reports[r.query.report]) return Boom.badRequest('invalid report (100)')
 
       const missingParams = reports[r.query.report].params.filter(e => !r.query[e])
-      if (missingParams.length) {
+      if ( typeof missingParams !== 'undefined' ) {
         return Boom.badRequest(`missing required parameters: ${missingParams.join()}` + ' (101)')
       }
 
@@ -386,7 +386,7 @@ function ILSWSErrorResponse (error) {
       return Boom.gatewayTimeout(error.message + ' (500)')
     default:
       console.log(error)
-      if (error.response.data.messageList.length) {
+      if ( typeof error.response.data.messageList !== 'undefined' ) {
         console.log(error.response.data.messageList[0].message)
       }
       return Boom.badImplementation(`ILSWS ${error.toString()}` + ' (600)')

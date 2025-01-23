@@ -118,8 +118,8 @@ const ILSWS_PATRON_INCLUDE_FIELDS = [
 
 const ILSWS = {
   aboutIlsWs: () => api.get('aboutIlsWs'),
-  loginUser: (username, password) => api.post('user/staff/login', {}, {
-    params: { login: username, password: password }
+  loginUser: (username, password) => api.post('user/staff/login', { login: username, password: password }, {
+    params: {}
   }),
   getPatronByBarcode: (token, barcode) => api.get(`user/patron/barcode/${barcode}`, {
     headers: { 'x-sirs-sessionToken': token },

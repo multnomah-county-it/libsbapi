@@ -41,8 +41,8 @@ const requestHandlers = {
         hold: { params: ['uid'] },
         courtesy: { params: ['uid'] },
         overdue: { params: ['uid'] },
-        chkcharge: { params: ['uid', 'id'] },
-        chkhold: { params: ['id'] },
+        chkcharge: { params: ['uid', 'ikey'] },
+        chkhold: { params: ['ikey'] },
         fee: { params: ['uid'] },
         cancel: { params: ['dbkey'] },
         holdexpiration: { params: ['data'] }
@@ -166,7 +166,7 @@ const ILSWS = {
     if (error.response && error.response.status === 404) return null
     throw error
   }),
-  lookupItemStatus: (token, barcode) => api.get(`rest/circulation/lookupItemStatus?itemID=${barcode}`, {
+  lookupItemStatus: (token, ikey) => api.get(`circulation/itemCircInfo/key/${ikey}`, {
     headers: { 'x-sirs-sessionToken': token }
   }),
   cancelHold: (token, holdKey) => api.post('/circulation/holdRecord/cancelHold', {
@@ -351,7 +351,7 @@ const SBAPI = {
   chkhold: (params, h) => {
     return ILSWS.loginUser(config.ILSWS_USERNAME, config.ILSWS_PASSWORD)
       .then(loginResponse => loginResponse.data)
-      .then(loginData => ILSWS.lookupItemStatus(loginData.sessionToken, params.id))
+      .then(loginData => ILSWS.lookupItemStatus(loginData.sessionToken, params.ikey))
       .then(lookupItemStatusResponse => lookupItemStatusResponse.data)
       .then((itemStatusData) => {
         if (itemStatusData.faultResponse && itemStatusData.faultResponse.string == 'Item not found in catalog') return Boom.notFound('record not found (301)')

@@ -41,7 +41,7 @@ const requestHandlers = {
         hold: { params: ['uid'] },
         courtesy: { params: ['uid'] },
         overdue: { params: ['uid'] },
-        chkcharge: { params: ['uid', 'ikey'] },
+        chkcharge: { params: ['uid', 'id'] },
         chkhold: { params: ['ikey'] },
         fee: { params: ['uid'] },
         cancel: { params: ['dbkey'] },

@@ -315,9 +315,9 @@ date
 Output:
 ```
     <USER>
-        < ITEM_INFO>
+        <ITEM_INFO>
             <USER_BARCODE>21168045392313</USER_BARCODE>
-            < ITEM_TITLE>Invisible Man</ITEM_TITLE >
+            <ITEM_TITLE>Invisible Man</ITEM_TITLE >
          </ITEM_INFO>
         <ITEM_INFO>
             <USER_BARCODE>21168045392333</USER_BARCODE>

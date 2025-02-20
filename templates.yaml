@@ -18,6 +18,7 @@ holdResponse: |
     <% holds.forEach(hold => { %>
       <HOLD_ITEM>
         <HOLD_BARCODE><%= hold.data.fields.item.fields.barcode %></HOLD_BARCODE>
+        <HOLD_ITEM_KEY><%= hold.data.fields.item.key %></HOLD_ITEM_KEY>
         <HOLD_TITLE><%= hold.data.fields.bib.fields.title %></HOLD_TITLE>
         <HOLD_AVAILABLE_DATE><%= ILSWSDateToSBDate(hold.data.fields.fillByDate) %></HOLD_AVAILABLE_DATE>
         <HOLD_PICKUP_LOCATION><%= hold.data.fields.pickupLibrary.key %></HOLD_PICKUP_LOCATION>
@@ -43,6 +44,7 @@ courtesyResponse: |
     <% items.forEach(item => { %>
       <COURTESY_ITEM>
         <COURTESY_BARCODE><%= item.data.fields.item.fields.barcode %></COURTESY_BARCODE>
+        <COURTESY_ITEM_KEY><%= item.data.fields.item.key %></COURTESY_ITEM_KEY>
         <COURTESY_TITLE><%= item.data.fields.item.fields.bib.fields.title %></COURTESY_TITLE>
         <COURTESY_DUE_DATE><%= ILSWSDateToSBDate(item.data.fields.dueDate) %></COURTESY_DUE_DATE>
         <COURTESY_RENEW_FLAG><%= item.renewFlags[0] %></COURTESY_RENEW_FLAG>
@@ -59,6 +61,7 @@ overdueResponse: |
     <% items.forEach(item => { %>
       <OVERDUE_ITEM>
         <OVERDUE_BARCODE><%= item.data.fields.item.fields.barcode %></OVERDUE_BARCODE>
+        <OVERDUE_ITEM_KEY><%= item.data.fields.item.key %></OVERDUE_ITEM_KEY>
         <OVERDUE_TITLE><%= item.data.fields.item.fields.bib.fields.title %></OVERDUE_TITLE>
         <OVERDUE_DUE_DATE><%= ILSWSDateToSBDate(item.data.fields.dueDate) %></OVERDUE_DUE_DATE>
         <OVERDUE_RENEW_FLAG><%= item.overdueFlags[0] %></OVERDUE_RENEW_FLAG>
@@ -76,7 +79,7 @@ chkchargeResponse: |
   </ITEM>
 chkholdResponse: |
   <ITEM>
-    <ITEM_BARCODE><%= data.itemID %></ITEM_BARCODE>
+    <ITEM_KEY><%= data.key %></ITEM_KEY>
     <ONHOLD><%= !!(data.itemStatus && data.itemStatus.includes('ONHOLD')) ? 1 : 0 %></ONHOLD>
   </ITEM>
 feeResponse: |

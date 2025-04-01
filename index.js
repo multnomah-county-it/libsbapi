@@ -24,7 +24,6 @@ const yaml = require('node-yaml')
 
 const config = require('./config.json')
 const templates = yaml.readSync('./templates.yaml')
-
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>\n'
 
 const server = Hapi.server({
@@ -161,8 +160,7 @@ const ILSWS = {
       includeFields: 'item{barcode,currentLocation},item{bib{title}},dueDate,overdue,estimatedOverdueAmount,item{holdRecordList{status}},renewalCount'
     }
   }).catch(error => {
-    console.log(error.response.data)
-    // console.log('FUUUU')
+    // console.log(error.response.data)
     if (error.response && error.response.status === 404) return null
     throw error
   }),

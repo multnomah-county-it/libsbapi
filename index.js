@@ -615,7 +615,10 @@ async function start () {
   	const aboutResponse = await ILSWS.aboutIlsWs()
   	aboutResponse.data.fields.product.forEach(product => {
     	server.log(['info'], `${colors.red(product.name)}: ${product.version}`)
-  	})
+    const aboutResponse = await ILSWS.aboutIlsWs()
+    aboutResponse.data.fields.product.forEach(product => {
+        server.log(['info'], `${colors.red(product.name)}: ${product.version}`)
+    })
   } catch (error) {
   	server.log(['error'], 'Failed to connect to ILSWS API on startup.')
   	server.log(['error'], error.message)

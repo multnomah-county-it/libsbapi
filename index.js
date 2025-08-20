@@ -380,7 +380,21 @@ const SBAPI = {
   	}
 
   	const overdueItems = _.filter(circDetails, e => _.get(e, 'data.fields.overdue'))
-  	overdueItems.forEach(item => {
+  overdue: async (params, h) => {
+    const loginResponse = await ILSWS.loginUser(config.ILSWS_USERNAME, config.ILSWS_PASSWORD)
+    const token = loginResponse.data.sessionToken
+    const patronResponse = await ILSWS.getPatronByBarcode(token, params.uid)
+    const patronData = patronResponse.data
+
+    const circRecordList = patronData.fields.circRecordList
+    let circDetails = []
+    if (circRecordList) {
+      const circPromises = circRecordList.map(circ => ILSWS.getCircRecord(token, circ.key))
+      circDetails = (await Promise.all(circPromises)).filter(Boolean)
+    }
+
+    const overdueItems = _.filter(circDetails, e => _.get(e, 'data.fields.overdue'))
+    overdueItems.forEach(item => {
     	const holdsOnItem = _.get(item, 'data.fields.item.fields.holdRecordList', [])
     	item.holdCount = holdsOnItem.filter(hold => hold.fields.status === 'PLACED').length
     	item.overdueFlags = setFailureFlags(patronData.fields, item)

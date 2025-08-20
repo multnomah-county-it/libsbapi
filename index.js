@@ -485,7 +485,18 @@ const reportRequestHandler = async (request, h) => {
   	fee: { params: ['uid'] },
   	cancel: { params: ['dbkey'] },
   	holdexpiration: { params: ['data'] }
-  }
+  const reports = {
+    userkey: { params: ['uid'] },
+    userbarcode: { params: ['ukey'] },
+    hold: { params: ['uid'] },
+    courtesy: { params: ['uid'] },
+    overdue: { params: ['uid'] },
+    chkcharge: { params: ['uid', 'id'] },
+    chkhold: { params: ['ikey'] },
+    fee: { params: ['uid'] },
+    cancel: { params: ['dbkey'] },
+    holdexpiration: { params: ['data'] }
+  }
 
   const reportName = request.query.report
   const reportConfig = reports[reportName]

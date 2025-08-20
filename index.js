@@ -340,7 +340,7 @@ const SBAPI = {
 
     const circRecordList = patronData.fields.circRecordList
     let circDetails = []
-  	if (circRecordList) {
+    if (circRecordList) {
       const circPromises = circRecordList.map(circ => ILSWS.getCircRecord(token, circ.key))
       circDetails = (await Promise.all(circPromises)).filter(Boolean) // Filter out nulls
     }

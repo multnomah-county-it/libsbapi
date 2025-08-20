@@ -619,7 +619,48 @@ async function start () {
   } catch (error) {
   	server.log(['error'], 'Failed to connect to ILSWS API on startup.')
   	server.log(['error'], error.message)
-  }
+  try {
+    // Register logging plugin
+    await server.register({
+      plugin: require('@hapi/good'),
+      options: {
+        ops: false,
+        reporters: {
+          consoleReporter: [{
+            module: '@hapi/good-console',
+            args: [{ color: true }]
+          }, 'stdout']
+        }
+      }
+    })
+
+    // Define server routes
+    await server.route({
+      method: 'GET',
+      path: '/cgi-bin/sb.cgi',
+      handler: reportRequestHandler
+    })
+
+    await server.start()
+  } catch (err) {
+    server.log(['error'], err)
+    process.exit(1)
+  }
+
+  // Log server information on startup
+  server.log(['info'], colors.red(LOGO))
+  server.log(['info'], `${colors.red('LISTENING:')} ${server.info.uri}`)
+
+  // Check connectivity to the ILSWS API and log its version
+  try {
+    const aboutResponse = await ILSWS.aboutIlsWs()
+    aboutResponse.data.fields.product.forEach(product => {
+      server.log(['info'], `${colors.red(product.name)}: ${product.version}`)
+    })
+  } catch (error) {
+    server.log(['error'], 'Failed to connect to ILSWS API on startup.')
+    server.log(['error'], error.message)
+  }
 }
 
 // Start the server

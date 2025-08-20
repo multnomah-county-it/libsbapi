@@ -545,7 +545,7 @@ const reportRequestHandler = async (request, h) => {
 function handleIlsWsError (error, h) {
   // Prioritize handling HTTP errors from the upstream API.
   if (error.response && error.response.data) {
-  	const { status, data } = error.response
+    const { status, data } = error.response
   	server.log(['error', 'ilsws'], `ILSWS API Error - Status: ${status}, Data: ${JSON.stringify(data)}`)
 
   	// Pass the entire error data object from the API directly to the client,

@@ -513,7 +513,18 @@ const reportRequestHandler = async (request, h) => {
   	const message = `Missing required parameters: ${missingParams.join(', ')} (101)`
   	const payload = { messageList: [{ code: 'SBAPI.Error.BadRequest', message }] }
   	return h.response(payload).type('application/json').code(400)
-  }
+  if (!reportConfig) {
+    const payload = { messageList: [{ code: 'SBAPI.Error.BadRequest', message: 'Invalid report type provided (100)' }] }
+    return h.response(payload).type('application/json').code(400)
+  }
+
+  // Validate required parameters are present
+  const missingParams = reportConfig.params.filter(param => !request.query[param])
+  if (missingParams.length > 0) {
+    const message = `Missing required parameters: ${missingParams.join(', ')} (101)`
+    const payload = { messageList: [{ code: 'SBAPI.Error.BadRequest', message }] }
+    return h.response(payload).type('application/json').code(400)
+  }
 
   // SECURITY: Basic input sanitization could be added here to validate the format
   // of parameters like 'uid' or 'ikey' before passing them to the ILSWS API.

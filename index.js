@@ -346,7 +346,7 @@ const SBAPI = {
     }
 
     const renewItems = _.filter(circDetails, o => _.get(o, 'data.fields.item'))
-  	renewItems.forEach(item => {
+    renewItems.forEach(item => {
       const holdsOnItem = _.get(item, 'data.fields.item.fields.holdRecordList', [])
       item.holdCount = holdsOnItem.filter(hold => hold.fields.status === 'PLACED').length
       item.renewFlags = setFailureFlags(patronData.fields, item)

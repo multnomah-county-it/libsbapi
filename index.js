@@ -360,7 +360,7 @@ const SBAPI = {
       items: renewItems,
       ILSWSDateToSBDate
     })
-  	return h.response(XML_HEADER + renderedXml).type('application/xml')
+    return h.response(XML_HEADER + renderedXml).type('application/xml')
   },
 
   /**

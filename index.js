@@ -18,14 +18,15 @@ const axios = require('axios')
 const axiosRetry = require('axios-retry')
 const moment = require('moment')
 const colors = require('ansi-colors')
+const fs = require('fs')
 const ejs = require('ejs')
-const yaml = require('node-yaml')
+const yaml = require('js-yaml')
 
 // --- Application Configuration ---
 // Local modules
 // SECURITY: It's highly recommended to use environment variables for sensitive data.
 const config = require('./config.json')
-const templates = yaml.readSync('./templates.yaml') // Load XML response templates
+const templates = yaml.load(fs.readFileSync('./templates.yaml', 'utf8')) // Load XML response templates
 
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>\n'
 

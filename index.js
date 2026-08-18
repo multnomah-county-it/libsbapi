@@ -18,6 +18,7 @@ const axios = require('axios')
 const axiosRetry = require('axios-retry')
 const moment = require('moment')
 const colors = require('ansi-colors')
+const path = require('path')
 const fs = require('fs')
 const ejs = require('ejs')
 const yaml = require('js-yaml')
@@ -25,8 +26,11 @@ const yaml = require('js-yaml')
 // --- Application Configuration ---
 // Local modules
 // SECURITY: It's highly recommended to use environment variables for sensitive data.
-const config = require('./config.json')
-const templates = yaml.load(fs.readFileSync('./templates.yaml', 'utf8')) // Load XML response templates
+const configPath = fs.existsSync(path.join(__dirname, 'config.json'))
+  ? './config.json'
+  : './config_sample.json'
+const config = require(configPath)
+const templates = yaml.load(fs.readFileSync(path.join(__dirname, 'templates.yaml'), 'utf8')) // Load XML response templates
 
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>\n'
 
@@ -462,4 +466,21 @@ async function start () {
   }
 }
 
-start()
+if (require.main === module) {
+  start()
+}
+
+module.exports = {
+  server,
+  api,
+  ILSWS,
+  SBAPI,
+  FAILURE_FLAGS,
+  MAX_FINE_AMOUNT,
+  MAX_RENEWAL_COUNT,
+  setFailureFlags,
+  ILSWSDateToSBDate,
+  reportRequestHandler,
+  templates,
+  start
+}

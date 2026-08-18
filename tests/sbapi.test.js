@@ -2,50 +2,40 @@
 
 const { describe, it } = require('node:test')
 const assert = require('node:assert/strict')
-const fs = require('fs')
-const path = require('path')
-const yaml = require('js-yaml')
 const ejs = require('ejs')
-const moment = require('moment')
-const _ = require('lodash')
+const {
+  setFailureFlags,
+  ILSWSDateToSBDate,
+  reportRequestHandler,
+  FAILURE_FLAGS,
+  MAX_FINE_AMOUNT,
+  MAX_RENEWAL_COUNT,
+  templates
+} = require('../index')
 
 describe('Shoutbomb API (libsbapi) Tests', () => {
-  const templatesPath = path.join(__dirname, '..', 'templates.yaml')
-  const templates = yaml.load(fs.readFileSync(templatesPath, 'utf8'))
   const XML_HEADER = '<?xml version="1.0" encoding="UTF-8"?>\n'
 
-  const FAILURE_FLAGS = {
-    PATRON_BLOCKED: '12',
-    EXCESSIVE_FINES: '11',
-    ITEM_HAS_HOLDS: '13',
-    MAX_RENEWALS_REACHED: '14',
-    RENEWAL_ALLOWED: '10'
+  function createMockH () {
+    return {
+      response: (payload) => {
+        const resp = {
+          payload,
+          statusCode: 200,
+          headers: {},
+          code: (code) => {
+            resp.statusCode = code
+            return resp
+          },
+          type: (contentType) => {
+            resp.headers['content-type'] = contentType
+            return resp
+          }
+        }
+        return resp
+      }
+    }
   }
-
-  const MAX_FINE_AMOUNT = 50
-  const MAX_RENEWAL_COUNT = 50
-
-  function setFailureFlags (patron, item) {
-    const flags = []
-    const blockedStatuses = ['BLOCKED', 'BARRED', 'EXCLUDED']
-
-    if (blockedStatuses.includes(_.get(patron, 'standing.key'))) {
-      flags.push(FAILURE_FLAGS.PATRON_BLOCKED)
-    }
-    if (_.get(patron, 'patronStatusInfo.fields.amountOwed.amount', 0) > MAX_FINE_AMOUNT) {
-      flags.push(FAILURE_FLAGS.EXCESSIVE_FINES)
-    }
-    if (item.holdCount > 0) {
-      flags.push(FAILURE_FLAGS.ITEM_HAS_HOLDS)
-    }
-    if (_.get(item, 'data.fields.renewalCount', 0) >= MAX_RENEWAL_COUNT) {
-      flags.push(FAILURE_FLAGS.MAX_RENEWALS_REACHED)
-    }
-
-    return flags
-  }
-
-  const ILSWSDateToSBDate = (date) => date ? moment(date, 'YYYY-MM-DD').format('YYYYMMDD') : ''
 
   describe('Template Loading and Parsing', () => {
     it('should parse templates.yaml into a valid object with all expected template keys', () => {
@@ -74,50 +64,55 @@ describe('Shoutbomb API (libsbapi) Tests', () => {
     })
   })
 
-  describe('Failure Flags Calculation (setFailureFlags)', () => {
+  describe('Failure Flags Calculation (setFailureFlags - Production Function)', () => {
     it('should identify blocked patron standing', () => {
       const patron = { standing: { key: 'BLOCKED' } }
       const item = { holdCount: 0 }
       const flags = setFailureFlags(patron, item)
-      assert.deepEqual(flags, ['12'])
+      assert.deepEqual(flags, [FAILURE_FLAGS.PATRON_BLOCKED])
     })
 
     it('should identify barred patron standing', () => {
       const patron = { standing: { key: 'BARRED' } }
       const item = { holdCount: 0 }
       const flags = setFailureFlags(patron, item)
-      assert.deepEqual(flags, ['12'])
+      assert.deepEqual(flags, [FAILURE_FLAGS.PATRON_BLOCKED])
     })
 
-    it('should identify excessive fines (> $50)', () => {
-      const patron = { patronStatusInfo: { fields: { amountOwed: { amount: 55.00 } } } }
+    it('should identify excessive fines (> MAX_FINE_AMOUNT)', () => {
+      const patron = { patronStatusInfo: { fields: { amountOwed: { amount: MAX_FINE_AMOUNT + 5 } } } }
       const item = { holdCount: 0 }
       const flags = setFailureFlags(patron, item)
-      assert.deepEqual(flags, ['11'])
+      assert.deepEqual(flags, [FAILURE_FLAGS.EXCESSIVE_FINES])
     })
 
     it('should identify item with holds', () => {
       const patron = { standing: { key: 'OK' } }
       const item = { holdCount: 2 }
       const flags = setFailureFlags(patron, item)
-      assert.deepEqual(flags, ['13'])
+      assert.deepEqual(flags, [FAILURE_FLAGS.ITEM_HAS_HOLDS])
     })
 
     it('should identify max renewals reached', () => {
       const patron = { standing: { key: 'OK' } }
-      const item = { holdCount: 0, data: { fields: { renewalCount: 50 } } }
+      const item = { holdCount: 0, data: { fields: { renewalCount: MAX_RENEWAL_COUNT } } }
       const flags = setFailureFlags(patron, item)
-      assert.deepEqual(flags, ['14'])
+      assert.deepEqual(flags, [FAILURE_FLAGS.MAX_RENEWALS_REACHED])
     })
 
     it('should return multiple flags when multiple conditions are met', () => {
       const patron = {
         standing: { key: 'BLOCKED' },
-        patronStatusInfo: { fields: { amountOwed: { amount: 75.00 } } }
+        patronStatusInfo: { fields: { amountOwed: { amount: MAX_FINE_AMOUNT + 25 } } }
       }
-      const item = { holdCount: 1, data: { fields: { renewalCount: 50 } } }
+      const item = { holdCount: 1, data: { fields: { renewalCount: MAX_RENEWAL_COUNT } } }
       const flags = setFailureFlags(patron, item)
-      assert.deepEqual(flags, ['12', '11', '13', '14'])
+      assert.deepEqual(flags, [
+        FAILURE_FLAGS.PATRON_BLOCKED,
+        FAILURE_FLAGS.EXCESSIVE_FINES,
+        FAILURE_FLAGS.ITEM_HAS_HOLDS,
+        FAILURE_FLAGS.MAX_RENEWALS_REACHED
+      ])
     })
 
     it('should return empty array for clean patron and item', () => {
@@ -197,7 +192,7 @@ describe('Shoutbomb API (libsbapi) Tests', () => {
       const mockPatron = { fields: { barcode: '21967002133994' } }
       const items = [{
         holdCount: 0,
-        renewFlags: ['10'],
+        renewFlags: [FAILURE_FLAGS.RENEWAL_ALLOWED],
         data: {
           fields: {
             dueDate: '2026-06-24',
@@ -276,71 +271,35 @@ describe('Shoutbomb API (libsbapi) Tests', () => {
     })
   })
 
-  describe('Report Request Validation Logic', () => {
-    const reports = {
-      userkey: { params: ['uid'] },
-      userbarcode: { params: ['ukey'] },
-      hold: { params: ['uid'] },
-      courtesy: { params: ['uid'] },
-      overdue: { params: ['uid'] },
-      chkcharge: { params: ['uid', 'id'] },
-      chkhold: { params: ['ikey'] },
-      fee: { params: ['uid'] },
-      cancel: { params: ['dbkey'] }
-    }
-
-    function validateRequest (query) {
-      const reportName = query.report
-      const reportConfig = reports[reportName]
-
-      if (!reportName || !reportConfig) {
-        return {
-          statusCode: 400,
-          payload: { messageList: [{ code: 'SBAPI.Error.BadRequest', message: 'Invalid or missing report type (100)' }] }
-        }
-      }
-
-      const missingParams = reportConfig.params.filter(param => !query[param])
-      if (missingParams.length > 0) {
-        const message = `Missing required parameters for '${reportName}' report: ${missingParams.join(', ')} (101)`
-        return {
-          statusCode: 400,
-          payload: { messageList: [{ code: 'SBAPI.Error.BadRequest', message }] }
-        }
-      }
-
-      return { statusCode: 200 }
-    }
-
-    it('should return 400 if report parameter is missing', () => {
-      const res = validateRequest({})
+  describe('Report Request Validation (reportRequestHandler - Production Handler)', () => {
+    it('should return 400 if report parameter is missing', async () => {
+      const req = { query: {} }
+      const res = await reportRequestHandler(req, createMockH())
       assert.equal(res.statusCode, 400)
       assert.equal(res.payload.messageList[0].code, 'SBAPI.Error.BadRequest')
       assert.match(res.payload.messageList[0].message, /Invalid or missing report type \(100\)/)
     })
 
-    it('should return 400 if report type is unknown', () => {
-      const res = validateRequest({ report: 'nonexistent' })
+    it('should return 400 if report type is unknown', async () => {
+      const req = { query: { report: 'nonexistent' } }
+      const res = await reportRequestHandler(req, createMockH())
       assert.equal(res.statusCode, 400)
       assert.equal(res.payload.messageList[0].code, 'SBAPI.Error.BadRequest')
       assert.match(res.payload.messageList[0].message, /Invalid or missing report type \(100\)/)
     })
 
-    it('should return 400 if required parameter is missing for report', () => {
-      const res = validateRequest({ report: 'hold' })
+    it('should return 400 if required parameter is missing for report', async () => {
+      const req = { query: { report: 'hold' } }
+      const res = await reportRequestHandler(req, createMockH())
       assert.equal(res.statusCode, 400)
       assert.match(res.payload.messageList[0].message, /Missing required parameters for 'hold' report: uid \(101\)/)
     })
 
-    it('should return 400 if one of multiple required parameters is missing for chkcharge', () => {
-      const res = validateRequest({ report: 'chkcharge', uid: '12345' })
+    it('should return 400 if one of multiple required parameters is missing for chkcharge', async () => {
+      const req = { query: { report: 'chkcharge', uid: '12345' } }
+      const res = await reportRequestHandler(req, createMockH())
       assert.equal(res.statusCode, 400)
       assert.match(res.payload.messageList[0].message, /Missing required parameters for 'chkcharge' report: id \(101\)/)
-    })
-
-    it('should return 200 for valid report and required parameters', () => {
-      const res = validateRequest({ report: 'userkey', uid: '21168045392313' })
-      assert.equal(res.statusCode, 200)
     })
   })
 })

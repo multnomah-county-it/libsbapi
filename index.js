@@ -480,6 +480,10 @@ module.exports = {
   MAX_RENEWAL_COUNT,
   setFailureFlags,
   ILSWSDateToSBDate,
+  getApiToken,
+  getPatronData,
+  getCirculationDetails,
+  handleIlsWsError,
   reportRequestHandler,
   templates,
   start

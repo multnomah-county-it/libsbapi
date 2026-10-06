@@ -23,7 +23,7 @@
     "moment": "^2.31.0"
   },
   "devDependencies": {
-    "eslint": "^10.11.0",
+    "eslint": "^9.39.5",
     "neostandard": "^0.13.0"
   }
 }

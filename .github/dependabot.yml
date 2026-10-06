@@ -9,3 +9,8 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    target-branch: "dev"
+    ignore:
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+
